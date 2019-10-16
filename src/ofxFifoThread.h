@@ -10,18 +10,29 @@ namespace ofxFifo{
     
     class vidWriteThread : public ofThread{
     protected:
-        int did_frame = -1;
+        bool new_data = false;
     public:
         ofPixels pixels;
         string pipe_dir;
         float fps = 0;
+        void setPixels(ofImage& img) {
+            setPixels(img.getPixels());
+        }
+
+        void setPixels(ofPixels& pix) {
+            lock();
+            new_data = true;
+            pixels = pix;
+            unlock();
+        }
+
         void threadedFunction(){
             float t = ofGetElapsedTimef();
             while (isThreadRunning()){
-                if (did_frame != ofGetFrameNum()){
+                if (new_data){
                     lock();
                     write_image(pixels,pipe_dir);
-                    did_frame = ofGetFrameNum();
+                    new_data = false;
                     float t1 = ofGetElapsedTimef();
                     fps = 1.0/(t1-t);
                     t = t1;
